@@ -54,8 +54,8 @@ Either clone it with a git client, or simply download it as a zip and unpack it 
 
 There's currently 3 commands in this repository:
 
-`build.bat` - builds and start the code running without parallelization
+`./testing_sums/build.bat` - builds and start the code running without parallelization
 
-`build_mp.bat` - builds and start the code running, using parallelization via OpenMP on all CPU cores
+`./testing_sums/build_mp.bat` - builds and start the code running, using parallelization via OpenMP on all CPU cores
 
-`build_acc.bat` - builds and start the code running, using parallelization via OpenACC on a GPU
+`./testing_sums/build_acc.bat` - builds and start the code running, using parallelization via OpenACC on a GPU
