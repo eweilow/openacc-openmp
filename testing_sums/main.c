@@ -1,38 +1,52 @@
 #include <stdio.h>
 #include <time.h>
-int main()
-{
-  clock_t begin = clock();
 
-  const int range = 10000;
-  const int totalOperations = range * range;
+
+struct Result {
+  long operationsRun;
+  double millisecondsSpent;
+  double microsecondsPerOperation;
+};
+
+  /* Here lies the actual code */
+void executeSummation(int range) {
   int output[range][range];
-  
+
   #pragma acc kernels
   {
     #pragma omp parallel for
     for(int a = 0; a < range; a++) {
       for(int b = 0; b < range; b++) {
         int result = 0;
-        for(int n = 0; n < a + b; n++) {
+        for(int n = 0; n < (a + b); n++) {
           result += n;
         }
-        output[a][b] = result;
+        output[a][b] += result;
       }
     }
   }
 
+}
+
+struct Result runComputation(int range) {
+  struct Result result;
+  clock_t begin = clock();
+
+  executeSummation(range);
+
   clock_t end = clock();
-  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+  result.millisecondsSpent = 1000.0 * (double)(end - begin) / CLOCKS_PER_SEC;
+  result.microsecondsPerOperation = 1000.0 * result.millisecondsSpent / (double)(range * range);
+  return result;
+}
 
-  double time_per_op = time_spent / (double)(totalOperations);
+int main()
+{
+  struct Result result = runComputation(10000);
 
-  int a = 1000;
-  int b = 1313;
-  printf("\nRan %d ops\n", totalOperations);
-  printf("Total execution time: %f ms\n", time_spent * 1000.0);
-  printf("Total time per op: %f microsecs\n", time_per_op * 1000000.0);
-  printf("Sample result: %d + %d = %d\n", a, b, output[a][b]);
+  printf("\nRan %d ops\n", result.operationsRun); 
+  printf("Total execution time: %f ms\n", result.millisecondsSpent);
+  printf("Total time per op: %f microsecs\n", result.microsecondsPerOperation);
 
   return 0;
 }
