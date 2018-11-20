@@ -25,11 +25,11 @@ for a from 1 to N {
 
 ## Current experimentally shown speedup
 
-| Method         | Total time (ms) | Time per (a,b) sum (μs) | Relative speed |
-| -------------- | --------------- | ----------------------- | -------------- |
-| Unparallelized | 57750           | 0.5775                  | 1              |
-| Unparallelized | 15019           | 0.15019                 | 3.8            |
-| Unparallelized | 1060            | 0.0106                  | 54.5           |
+| Method         | Target | Threads | Total time (ms) | Time per (a,b) sum (μs) | Relative speed |
+| -------------- | ------ | ------- | --------------- | ----------------------- | -------------- |
+| Unparallelized | CPU    | 1       | 57750           | 0.5775                  | 1              |
+| OpenMP         | CPU    | 4       | 15019           | 0.15019                 | 3.8            |
+| OpenACC        | GPU    | N/A     | 1060            | 0.0106                  | 54.5           |
 
 ## How to use
 
