@@ -8,9 +8,9 @@ int main()
   const int totalOperations = range * range;
   int output[range][range];
   
-  #pragma omp parallel
   #pragma acc kernels
   {
+    #pragma omp parallel for
     for(int a = 0; a < range; a++) {
       for(int b = 0; b < range; b++) {
         int result = 0;
