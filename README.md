@@ -51,14 +51,17 @@ If it doesn't - try restarting your computer.
 Either clone it with a git client, or simply download it as a zip and unpack it into an appropriate location.
 
 ### Step 4 - open the correct folder
+
 Run `cd .\testing_sums` in the root of the downloaded files to be in the correct folder.
 
 ### Step 5 - run the code
 
-Inside `testing_sums`, there's currently 3 commands:
+Inside `testing_sums`, there's currently 4 commands:
 
-`./build.bat` - builds and start the code running without parallelization
+`./build.bat` - builds and start the code, without parallelization
 
-`./build_mp.bat` - builds and start the code running, using parallelization via OpenMP on all CPU cores
+`./build_mp.bat` - builds and start the code, using parallelization via OpenMP on all CPU cores
 
-`./build_acc.bat` - builds and start the code running, using parallelization via OpenACC on a GPU
+`./build_acc.bat` - builds and start the code, using parallelization via OpenACC on a GPU (**ONLY WORKS WITH AN NVIDIA GPU**, use the below command otherwise)
+
+`./build_acc_cpu.bat` - builds and start the code, using parallelization via OpenACC on CPU
