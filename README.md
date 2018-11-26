@@ -50,12 +50,15 @@ If it doesn't - try restarting your computer.
 
 Either clone it with a git client, or simply download it as a zip and unpack it into an appropriate location.
 
-### Step 4 - run the code
+### Step 4 - open the correct folder
+Run `cd .\testing_sums` in the root of the downloaded files to be in the correct folder.
 
-There's currently 3 commands in this repository:
+### Step 5 - run the code
 
-`./testing_sums/build.bat` - builds and start the code running without parallelization
+Inside `testing_sums`, there's currently 3 commands:
 
-`./testing_sums/build_mp.bat` - builds and start the code running, using parallelization via OpenMP on all CPU cores
+`./build.bat` - builds and start the code running without parallelization
 
-`./testing_sums/build_acc.bat` - builds and start the code running, using parallelization via OpenACC on a GPU
+`./build_mp.bat` - builds and start the code running, using parallelization via OpenMP on all CPU cores
+
+`./build_acc.bat` - builds and start the code running, using parallelization via OpenACC on a GPU
