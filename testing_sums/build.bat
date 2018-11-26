@@ -2,7 +2,7 @@
 
 SET OUTPUT=".\dist\build_acc.exe"
 SET PGCC="pgcc"
-SET BUILDCOMMAND=%PGCC% -o %OUTPUT% -fast -g main.c
+SET BUILDCOMMAND=%PGCC% -o=%OUTPUT% -fast main.c
 
 echo Removing existing build
 del %OUTPUT%
