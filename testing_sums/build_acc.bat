@@ -4,6 +4,7 @@ SET OUTPUT=".\dist\build_acc.exe"
 SET PGCC="pgcc"
 SET BUILDCOMMAND=%PGCC% -o=%OUTPUT% -acc -ta=tesla -fast -Minfo=accel -Mprof=ccff main.c
 
+mkdir .\dist
 echo Removing existing build
 del %OUTPUT%
 
