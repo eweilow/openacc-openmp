@@ -3,32 +3,41 @@
 
 #include "./shared.c"
 
-#define MATRIX_SIZE 1000000
+#define MATRIX_SIZE 1000
 
-float *matrixElements;
-unsigned int *indices;
-unsigned int elementCount;
-unsigned int rowOffsets[MATRIX_SIZE];
-
-float inputVector[MATRIX_SIZE];
-float outputVector[MATRIX_SIZE];
-
-void matrixMultiply()
+struct SparseMatrix
 {
-#pragma acc parallel loop copyin(matrixElements [0:elementCount], indices [0:elementCount], rowOffsets [0:MATRIX_SIZE]) \
-    copyin(inputVector) copy(outputVector)
-  for (int row = 0; row < MATRIX_SIZE; ++row)
+  unsigned int dimensions;
+  float *elements;
+  unsigned int elementCount;
+  unsigned int *elementIndices;
+  unsigned int *rowOffsets;
+};
+
+void matrixMultiply(struct SparseMatrix *matrix,
+                    float *inputVector,
+                    float *outputVector)
+{
+  unsigned int dimensions = matrix->dimensions;
+  float *elements = matrix->elements;
+  unsigned int elementCount = matrix->elementCount;
+  unsigned int *elementIndices = matrix->elementIndices;
+  unsigned int *rowOffsets = matrix->rowOffsets;
+
+#pragma acc parallel loop copyin(elements [0:elementCount], elementIndices [0:elementCount], rowOffsets [0:dimensions + 1]) \
+    copyin(inputVector [0:dimensions]) copy(outputVector [0:dimensions])
+  for (int row = 0; row < dimensions; ++row)
   {
     int startOffset = rowOffsets[row];
-    int endOffset = (row + 1 >= MATRIX_SIZE) ? MATRIX_SIZE : rowOffsets[row + 1];
+    int endOffset = rowOffsets[row + 1];
 
     float sum = 0.0;
 #pragma acc loop vector reduction(+ \
                                   : sum)
     for (int i = startOffset; i < endOffset; ++i)
     {
-      float matrixElement = matrixElements[i];
-      int column = indices[i];
+      float matrixElement = elements[i];
+      int column = elementIndices[i];
 
       sum += matrixElement * inputVector[column];
     }
@@ -36,70 +45,84 @@ void matrixMultiply()
   }
 }
 
-float getMatrixElement(int row, int column)
+float getMatrixElement(int row, int column, int totalSize)
 {
   if (row % 3 == 0)
   {
-    return 1.0 / (float)MATRIX_SIZE;
+    return 1.0 / (float)totalSize;
   }
   if (column % 3 == 0)
   {
-    return 2.0 / (float)MATRIX_SIZE;
+    return 2.0 / (float)totalSize;
   }
   return 0.0;
 }
 
 int main()
 {
+  struct SparseMatrix matrix;
+  float *inputVector;
+  float *outputVector;
+
+  matrix.dimensions = MATRIX_SIZE;
+  matrix.elementCount = 0;
   printf("Initializing matrices\n");
-  elementCount = 0;
-  for (int i = 0; i < MATRIX_SIZE; i++)
+
+  for (int i = 0; i < matrix.dimensions; ++i)
   {
-    for (int j = 0; j < MATRIX_SIZE; j++)
+    for (int j = 0; j < matrix.dimensions; ++j)
     {
-      float element = getMatrixElement(i, j);
+      float element = getMatrixElement(i, j, matrix.dimensions);
       if (fabsf(element) >= 1e-15f)
       {
-        ++elementCount;
+        ++matrix.elementCount;
       }
     }
   }
 
-  matrixElements = (float *)malloc((sizeof(float)) * elementCount);
-  indices = (unsigned int *)malloc((sizeof(unsigned int)) * elementCount);
+  matrix.elements = (float *)malloc(sizeof(float) * matrix.elementCount);
+  matrix.elementIndices = (unsigned int *)malloc(sizeof(unsigned int) * matrix.elementCount);
+  matrix.rowOffsets = (unsigned int *)malloc(sizeof(unsigned int) * (matrix.dimensions + 1));
 
   int currentRowOffset = 0;
-  for (int row = 0; row < MATRIX_SIZE; row++)
+  for (int row = 0; row < matrix.dimensions; row++)
   {
-    rowOffsets[row] = currentRowOffset;
-    for (int column = 0; column < MATRIX_SIZE; column++)
+    matrix.rowOffsets[row] = currentRowOffset;
+    for (int column = 0; column < matrix.dimensions; column++)
     {
-      float element = getMatrixElement(row, column);
+      float element = getMatrixElement(row, column, matrix.dimensions);
       if (fabsf(element) >= 1e-15f)
       {
         //printf("%d %d: %f", row, column, element);
-        indices[currentRowOffset] = column;
-        matrixElements[currentRowOffset] = element;
+        matrix.elementIndices[currentRowOffset] = column;
+        matrix.elements[currentRowOffset] = element;
         ++currentRowOffset;
       }
     }
   }
 
+  matrix.rowOffsets[matrix.dimensions] = currentRowOffset;
+
+  inputVector = (float *)malloc((sizeof(float)) * matrix.dimensions);
+  outputVector = (float *)malloc((sizeof(float)) * matrix.dimensions);
+
   printf("Initializing vectors\n");
-  initializeVectors(inputVector, outputVector, MATRIX_SIZE);
+  initializeVectors(inputVector, outputVector, matrix.dimensions);
+
   printf("Starting matrix multiplication\n\n");
   clock_t begin = clock();
 
   for (int i = 0; i < 1; i++)
   {
-    matrixMultiply();
+    matrixMultiply(&matrix, inputVector, outputVector);
+    inputVector = outputVector;
   }
 
   clock_t end = clock();
   printf("\nComputation took %f ms\n", 1000.0 * (double)(end - begin) / CLOCKS_PER_SEC);
 
-  printVector(inputVector, MATRIX_SIZE);
-  printVector(outputVector, MATRIX_SIZE);
+  printVector(inputVector, matrix.dimensions);
+  printVector(outputVector, matrix.dimensions);
   //compareVectors(inputVector, outputVector, MATRIX_SIZE);
   return 0;
 }
