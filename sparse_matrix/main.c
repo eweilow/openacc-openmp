@@ -53,8 +53,6 @@ int main()
 {
   printf("Initializing matrices\n");
   elementCount = 0;
-#pragma acc parallel loop reduction(+ \
-                                    : elementCount)
   for (int i = 0; i < MATRIX_SIZE; i++)
   {
     for (int j = 0; j < MATRIX_SIZE; j++)
@@ -92,7 +90,10 @@ int main()
   printf("Starting matrix multiplication\n\n");
   clock_t begin = clock();
 
-  matrixMultiply();
+  for (int i = 0; i < 1; i++)
+  {
+    matrixMultiply();
+  }
 
   clock_t end = clock();
   printf("\nComputation took %f ms\n", 1000.0 * (double)(end - begin) / CLOCKS_PER_SEC);
