@@ -3,7 +3,7 @@
 
 #include "./shared.c"
 
-#define MATRIX_SIZE 1000
+#define MATRIX_SIZE 10000
 
 struct SparseMatrix
 {
@@ -14,19 +14,15 @@ struct SparseMatrix
   unsigned int *rowOffsets;
 };
 
-void matrixMultiply(struct SparseMatrix *matrix,
+void matrixMultiply(struct SparseMatrix matrix,
+                    float *elements,
+                    unsigned int *elementIndices,
+                    unsigned int *rowOffsets,
                     float *inputVector,
                     float *outputVector)
 {
-  unsigned int dimensions = matrix->dimensions;
-  float *elements = matrix->elements;
-  unsigned int elementCount = matrix->elementCount;
-  unsigned int *elementIndices = matrix->elementIndices;
-  unsigned int *rowOffsets = matrix->rowOffsets;
-
-#pragma acc parallel loop copyin(elements [0:elementCount], elementIndices [0:elementCount], rowOffsets [0:dimensions + 1]) \
-    copyin(inputVector [0:dimensions]) copy(outputVector [0:dimensions])
-  for (int row = 0; row < dimensions; ++row)
+#pragma acc parallel loop present(elements, elementIndices, rowOffsets, inputVector, outputVector)
+  for (int row = 0; row < matrix.dimensions; ++row)
   {
     int startOffset = rowOffsets[row];
     int endOffset = rowOffsets[row + 1];
@@ -42,6 +38,19 @@ void matrixMultiply(struct SparseMatrix *matrix,
       sum += matrixElement * inputVector[column];
     }
     outputVector[row] = sum;
+  }
+}
+
+void computeMatrixIterations(struct SparseMatrix matrix,
+                             float *inputVector,
+                             float *outputVector)
+{
+#pragma acc data copyin(matrix, matrix.elements [0:matrix.elementCount], matrix.elementIndices [0:matrix.elementCount], matrix.rowOffsets [0:matrix.dimensions + 1]) copyin(inputVector [0:matrix.dimensions]) copyin(outputVector [0:matrix.dimensions]) copyout(outputVector [0:matrix.dimensions])
+  {
+    for (int i = 0; i < 1000; i++)
+    {
+      matrixMultiply(matrix, matrix.elements, matrix.elementIndices, matrix.rowOffsets, inputVector, outputVector);
+    }
   }
 }
 
@@ -112,11 +121,7 @@ int main()
   printf("Starting matrix multiplication\n\n");
   clock_t begin = clock();
 
-  for (int i = 0; i < 1; i++)
-  {
-    matrixMultiply(&matrix, inputVector, outputVector);
-    inputVector = outputVector;
-  }
+  computeMatrixIterations(matrix, inputVector, outputVector);
 
   clock_t end = clock();
   printf("\nComputation took %f ms\n", 1000.0 * (double)(end - begin) / CLOCKS_PER_SEC);
