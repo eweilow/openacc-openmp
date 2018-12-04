@@ -20,9 +20,9 @@ double createMatrixElement(unsigned int randomValue, long row, long column)
 void printMatrixInfo(
     unsigned int dimensions,
     double sparseness,
-    unsigned int bytes,
-    unsigned int expectedCountPerRow,
-    unsigned int expectedElements)
+    unsigned long long bytes,
+    unsigned long expectedCountPerRow,
+    unsigned long expectedElements)
 {
   printf(" matrix info:\n");
   printf(" - dimensions: 10^%d x 10^%d (%d x %d)\n", (unsigned int)log10(dimensions), (unsigned int)log10(dimensions), dimensions, dimensions);
@@ -31,7 +31,7 @@ void printMatrixInfo(
   printf(" memory info:\n");
   printf(" - 2^%d (%d) elements per row\n", (int)ceil(log2((double)expectedCountPerRow)), expectedCountPerRow);
   printf(" - 2^%d (%d) elements in total\n", (int)ceil(log2((double)expectedElements)), expectedElements);
-  printf(" - %.2f MB necessary\n", (double)bytes / 1e6);
+  printf(" - %d MB necessary\n", bytes / 1000000);
 }
 
 bool indexMatrix(struct SparseMatrix *matrix, unsigned int row, unsigned int column, double *out)
@@ -57,20 +57,20 @@ bool indexMatrix(struct SparseMatrix *matrix, unsigned int row, unsigned int col
 //#define PRINT_MATRIX
 
 // Generate a sparse matrix
-struct SparseMatrix generateMatrix(unsigned int dimensions, double sparseness)
+struct SparseMatrix generateMatrix(unsigned long dimensions, double sparseness)
 {
   struct SparseMatrix matrix;
   matrix.dimensions = dimensions;
 
   // The expected amount of elements per row, based on sparseness
-  unsigned int expectedCountPerRow = (unsigned int)((double)dimensions * (1.0 - sparseness));
+  unsigned long expectedCountPerRow = (unsigned long)((double)dimensions * (1.0 - sparseness));
   // The expected amount of elements necessary to allocate
-  unsigned int expectedElements = (unsigned int)((1.0 - sparseness) * (double)dimensions * dimensions);
+  unsigned long expectedElements = (expectedCountPerRow * dimensions);
 
   // Just used to print information
-  unsigned int bytes = expectedElements * (sizeof(double) + sizeof(unsigned int)) + // From matrix.elements
-                       (dimensions + 1) * sizeof(unsigned int) +                    // From matrix.rowOffsets
-                       expectedElements * (sizeof(unsigned int));                   // From matrix.elementColumns
+  unsigned long long bytes = (unsigned long long)expectedElements * (sizeof(double)) +      // From matrix.elements
+                             (unsigned long long)(dimensions + 1) * sizeof(unsigned int) +  // From matrix.rowOffsets
+                             (unsigned long long)expectedElements * (sizeof(unsigned int)); // From matrix.elementColumns
   printMatrixInfo(
       dimensions,
       sparseness,
@@ -93,7 +93,7 @@ struct SparseMatrix generateMatrix(unsigned int dimensions, double sparseness)
 
   unsigned int elementHead = 0; // The position in matrix.elements, matrix.elementColumns
   unsigned int rowHead = 0;     // The current row
-  for (unsigned int n = 0; n < expectedElements; n++)
+  for (unsigned long n = 0; n < expectedElements; n++)
   {
     unsigned int row = indicesWithNonZero[n] / dimensions;
     unsigned int column = indicesWithNonZero[n] % dimensions;

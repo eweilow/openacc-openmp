@@ -14,6 +14,8 @@ struct SparseMatrix
   unsigned int *rowOffsets;
 };
 
+#define BATCH 128
+
 void matrixMultiply(struct SparseMatrix matrix,
                     float *elements,
                     unsigned int *elementIndices,
@@ -22,22 +24,26 @@ void matrixMultiply(struct SparseMatrix matrix,
                     float *outputVector)
 {
 #pragma acc parallel loop present(elements, elementIndices, rowOffsets, inputVector, outputVector)
-  for (int row = 0; row < matrix.dimensions; ++row)
+  for (int batch = 0; batch < matrix.dimensions / BATCH; ++batch)
   {
-    int startOffset = rowOffsets[row];
-    int endOffset = rowOffsets[row + 1];
+#pragma acc loop worker
+    for (int row = BATCH * batch; row < min(matrix.dimensions, BATCH * (batch + 1)), ++row)
+    {
+      int startOffset = rowOffsets[row];
+      int endOffset = rowOffsets[row + 1];
 
-    float sum = 0.0;
+      float sum = 0.0;
 #pragma acc loop vector reduction(+ \
                                   : sum)
-    for (int i = startOffset; i < endOffset; ++i)
-    {
-      float matrixElement = elements[i];
-      int column = elementIndices[i];
+      for (int i = startOffset; i < endOffset; ++i)
+      {
+        float matrixElement = elements[i];
+        int column = elementIndices[i];
 
-      sum += matrixElement * inputVector[column];
+        sum += matrixElement * inputVector[column];
+      }
+      outputVector[row] = sum;
     }
-    outputVector[row] = sum;
   }
 }
 

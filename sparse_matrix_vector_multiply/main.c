@@ -6,13 +6,13 @@
 #include "./vectors.c"
 #include "./multiply.c"
 
-#define MATRIX_SIZE 1000000
-#define ITERATIONS_TO_RUN 20
+#define MATRIX_SIZE 700000
+#define ITERATIONS_TO_RUN 100
 
 #define SPARSENESS_PERCENTAGE 99.99
 #define SPARSENESS (double)(SPARSENESS_PERCENTAGE / 100.0)
 
-//#define VEC_DEBUG
+// #define VEC_DEBUG
 
 int main()
 {
@@ -22,10 +22,10 @@ int main()
   clock_t matrix_end = clock();
   double matrix_time = 1000.0 * (double)(matrix_end - matrix_begin) / CLOCKS_PER_SEC;
   printf(" elements:\n");
-  printf(" - total: %d\n", matrix.elementCount);
-  unsigned int triangleElements = matrix.dimensions * matrix.dimensions;
-  printf(" - sparseness: %.3f %%\n", 100.0 - 100.0 * (double)matrix.elementCount / (double)triangleElements);
-  printf(" - non-zero: %.3f %%\n", 100.0 * (double)matrix.elementCount / (double)triangleElements);
+  printf(" - sparseness: %.3f %%\n", 100.0 - 100.0 * (double)matrix.elementCount / (double)matrix.dimensions / (double)matrix.dimensions);
+  printf(" - non-zero: %.3f %%\n", 100.0 * (double)matrix.elementCount / (double)matrix.dimensions / (double)matrix.dimensions);
+  printf(" - total non-zero: %d\n", matrix.elementCount);
+  printf(" - wanted non-zero: %d\n", (unsigned long)((long double)(1.0 - SPARSENESS) * (double)matrix.dimensions * matrix.dimensions));
 
   printf(" time:\n");
   printf(" - total: %f milliseconds\n", matrix_time);
@@ -47,8 +47,8 @@ int main()
   printf(" - total time: %f milliseconds\n", time);
   printf(" - per iteration: %f microseconds (%.4f milliseconds)\n", 1000.0 * time / ITERATIONS_TO_RUN, time / ITERATIONS_TO_RUN);
 
-  printf("\n== Results ==\n");
 #ifdef VEC_DEBUG
+  printf("\n== Results ==\n");
   printf(" in:\n");
   free(input);
   createVector(&input, MATRIX_SIZE, 1.0);
