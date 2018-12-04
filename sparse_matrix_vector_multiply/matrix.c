@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
+#include "./pickRandom.c"
 
 struct SparseMatrix
 {
@@ -20,9 +21,7 @@ void printMatrixInfo(
     unsigned int dimensions,
     double sparseness,
     unsigned int bytes,
-    unsigned int allocationPerRow,
     unsigned int expectedCountPerRow,
-    unsigned int expectedAllocation,
     unsigned int expectedElements)
 {
   printf(" matrix info:\n");
@@ -30,30 +29,9 @@ void printMatrixInfo(
   printf(" - sparseness: %.2f%%\n", sparseness * 100.0);
 
   printf(" memory info:\n");
-  printf(" - 2^%d (%d) elements per row\n", (int)ceil(log2((double)allocationPerRow)), expectedCountPerRow);
-  printf(" - 2^%d (%d) elements in total\n", (int)ceil(log2((double)expectedAllocation)), expectedElements);
+  printf(" - 2^%d (%d) elements per row\n", (int)ceil(log2((double)expectedCountPerRow)), expectedCountPerRow);
+  printf(" - 2^%d (%d) elements in total\n", (int)ceil(log2((double)expectedElements)), expectedElements);
   printf(" - %.2f MB necessary\n", (double)bytes / 1e6);
-}
-
-// generate N random values into randomValues
-void generateRandomValues(unsigned int *randomValues, unsigned int N)
-{
-  for (unsigned int i = 0; i < N; i++)
-  {
-    randomValues[i] = rand();
-  }
-}
-
-// generate N random steps into randomSteps, with average distance period
-void createRandomSteps(unsigned int *randomSteps, unsigned int N, unsigned int period)
-{
-  generateRandomValues(randomSteps, N);
-  for (unsigned int i = 0; i < N; i++)
-  {
-    double rnd = randomSteps[i] / ((double)RAND_MAX);
-
-    randomSteps[i] = (unsigned int)(3.0 * rnd * period);
-  }
 }
 
 bool indexMatrix(struct SparseMatrix *matrix, unsigned int row, unsigned int column, double *out)
@@ -75,88 +53,70 @@ bool indexMatrix(struct SparseMatrix *matrix, unsigned int row, unsigned int col
   return false;
 }
 
-#define DEBUG
-
-/*
- * The algorithm works as follows:
- *  1. 
- * 
- */
+// #define DEBUG
 
 // Generate a sparse matrix
 struct SparseMatrix generateMatrix(unsigned int dimensions, double sparseness)
 {
-  // The expected amount of elements per row, based on sparseness
-  unsigned int expectedCountPerRow = (unsigned int)((double)dimensions * sparseness);
-  // The amount of elements rounded up to the nearest power of 2 that is guaranteed to fit the elements in each row
-  unsigned int allocationPerRow = (unsigned int)pow(2, ceil(log2((double)expectedCountPerRow)));
-
   struct SparseMatrix matrix;
   matrix.dimensions = dimensions;
 
+  // The expected amount of elements per row, based on sparseness
+  unsigned int expectedCountPerRow = (unsigned int)((double)dimensions * (1.0 - sparseness));
   // The expected amount of elements necessary to allocate
-  unsigned int expectedElements = sparseness * dimensions * (dimensions + 1) / 2;
-  // The amount of elements necessary to allocate, rounded up to a power of 2
-  unsigned int expectedAllocation = (unsigned int)pow(2, ceil(log2((double)expectedElements)));
+  unsigned int expectedElements = (unsigned int)((1.0 - sparseness) * (double)dimensions * dimensions);
 
   // Just used to print information
-  unsigned int bytes = expectedAllocation * (sizeof(double) + sizeof(unsigned int)) + (dimensions + 1) * sizeof(unsigned int) + allocationPerRow * (2 * sizeof(unsigned int));
+  unsigned int bytes = expectedElements * (sizeof(double) + sizeof(unsigned int)) + // From matrix.elements
+                       (dimensions + 1) * sizeof(unsigned int) +                    // From matrix.rowOffsets
+                       expectedElements * (sizeof(unsigned int));                   // From matrix.elementColumns
   printMatrixInfo(
       dimensions,
       sparseness,
       bytes,
-      allocationPerRow,
       expectedCountPerRow,
-      expectedAllocation,
       expectedElements);
 
-  matrix.elements = (double *)malloc(sizeof(double) * expectedAllocation);
-  matrix.elementColumns = (unsigned int *)malloc(sizeof(unsigned int) * expectedAllocation);
+  matrix.elements = (double *)malloc(sizeof(double) * expectedElements);
+  matrix.elementColumns = (unsigned int *)malloc(sizeof(unsigned int) * expectedElements);
   matrix.rowOffsets = (unsigned int *)malloc(sizeof(unsigned int) * (dimensions + 1));
   matrix.elementCount = 0;
 
-  unsigned int randomStepAverageDistance = (unsigned int)(1.0 / sparseness);
-  // Used to increment column in "random" steps
-  unsigned int *randomSteps = (unsigned int *)malloc(sizeof(unsigned int) * (allocationPerRow / randomStepAverageDistance));
-  // Used to generate matrix elements
-  unsigned int *randomValues = (unsigned int *)malloc(sizeof(unsigned int) * allocationPerRow);
+  // indicesWithNonZero is a sorted vector with distinct integers on the range [0, expectedElements)
+  unsigned int *indicesWithNonZero = (unsigned int *)malloc(sizeof(unsigned int) * expectedElements);
+  pickRandom(indicesWithNonZero, expectedElements, dimensions * dimensions);
 
-  int totalRandomSteps = allocationPerRow / randomStepAverageDistance;
-  createRandomSteps(randomSteps, totalRandomSteps, randomStepAverageDistance);
-  int current = 0;
-  for (int n = 0; n < totalRandomSteps; n++)
+#ifdef DEBUG
+  printf(" generation:\n");
+#endif
+
+  unsigned int elementHead = 0; // The position in matrix.elements, matrix.elementColumns
+  unsigned int rowHead = 0;     // The current row
+  for (unsigned int n = 0; n < expectedElements; n++)
   {
-    printf("%d (%d)\n", current, randomSteps[n] + 1);
-    current += randomSteps[n] + 1;
-  }
-  printf("END: %d, %d\n", current, allocationPerRow);
-  return matrix;
+    unsigned int row = indicesWithNonZero[n] / dimensions;
+    unsigned int column = indicesWithNonZero[n] % dimensions;
 
-  matrix.rowOffsets[0] = 0;
-  for (unsigned int row = 0; row < dimensions; ++row)
-  {
-    createRandomSteps(randomSteps, allocationPerRow, randomStepAverageDistance);
-    generateRandomValues(randomValues, allocationPerRow);
-
-    unsigned int index = 0;
-    unsigned int elementsOfRow = 0;
-    for (unsigned int column = row + randomSteps[0]; column < dimensions; column += randomSteps[++index])
+    while (row > rowHead)
     {
-      if (++elementsOfRow >= expectedCountPerRow)
-      {
-        break;
-      }
-      if (matrix.elementCount >= expectedElements)
-      {
-        break;
-      }
-      unsigned int indexInMatrix = matrix.elementCount++;
-      matrix.elements[indexInMatrix] = createMatrixElement(randomValues[index], row, column);
-      matrix.elementColumns[indexInMatrix] = column;
+#ifdef DEBUG
+      printf("  increment row\n");
+#endif
+      matrix.rowOffsets[++rowHead] = elementHead;
     }
-    matrix.rowOffsets[row + 1] = matrix.elementCount;
+
+#ifdef DEBUG
+    printf("   %d (row %d, col %d) heads: (row: %d / %d), (elements: %d / %d)\n", indicesWithNonZero[n], row, column, rowHead, dimensions, elementHead, expectedElements - 1);
+#endif
+    matrix.elements[elementHead] = (double)indicesWithNonZero[n];
+    matrix.elementColumns[elementHead] = column;
+    ++elementHead;
   }
   matrix.rowOffsets[0] = 0;
+  matrix.rowOffsets[rowHead + 1] = elementHead;
+  matrix.elementCount = elementHead;
+
+  generateRandomDoubles(matrix.elements, matrix.elementCount, -1.0, 1.0);
 
 #ifdef DEBUG
   printf(" rows:\n");

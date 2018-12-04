@@ -4,11 +4,11 @@
 
 #include "./matrix.c"
 
-#define MATRIX_SIZE 1000
+#define MATRIX_SIZE 1000000
 #define ITERATIONS_TO_RUN 1000
 
-#define SPARSENESS_PERCENTAGE 50.0
-#define SPARSENESS (double)(1.0 - SPARSENESS_PERCENTAGE / 100.0)
+#define SPARSENESS_PERCENTAGE 99.999
+#define SPARSENESS (double)(SPARSENESS_PERCENTAGE / 100.0)
 
 int main()
 {
@@ -19,9 +19,9 @@ int main()
   double matrix_time = 1000.0 * (double)(matrix_end - matrix_begin) / CLOCKS_PER_SEC;
   printf(" elements:\n");
   printf(" - total: %d\n", matrix.elementCount);
-  unsigned int triangleElements = matrix.dimensions * (matrix.dimensions + 1) / 2;
-  printf(" - sparseness: %.2f %%\n", 100.0 - 100.0 * (double)matrix.elementCount / (double)triangleElements);
-  printf(" - non-zero: %.2f %%\n", 100.0 * (double)matrix.elementCount / (double)triangleElements);
+  unsigned int triangleElements = matrix.dimensions * matrix.dimensions;
+  printf(" - sparseness: %.3f %%\n", 100.0 - 100.0 * (double)matrix.elementCount / (double)triangleElements);
+  printf(" - non-zero: %.3f %%\n", 100.0 * (double)matrix.elementCount / (double)triangleElements);
 
   printf(" time:\n");
   printf(" - total: %f milliseconds\n", matrix_time);

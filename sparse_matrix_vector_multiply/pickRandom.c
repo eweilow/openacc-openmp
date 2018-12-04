@@ -1,6 +1,25 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+// generate N random values into randomValues
+void generateRandomValues(unsigned int *randomValues, unsigned int N)
+{
+  for (unsigned int i = 0; i < N; i++)
+  {
+    randomValues[i] = rand();
+  }
+}
+
+// generate N random values into randomValues
+void generateRandomDoubles(double *randomValues, unsigned int N, double a, double b)
+{
+  for (unsigned int i = 0; i < N; i++)
+  {
+    randomValues[i] = (rand() / (double)RAND_MAX) * (b - a) + a;
+  }
+}
+
+// Pick n distinct random integers on the interval [0, maxSize)
 void pickRandom(unsigned int *into, unsigned int count, unsigned int maxSize)
 {
   unsigned long bytes = sizeof(bool) * maxSize;
@@ -15,7 +34,7 @@ void pickRandom(unsigned int *into, unsigned int count, unsigned int maxSize)
   unsigned int picked = 0;
   while (picked < count)
   {
-    if (!isPicked[next])
+    if (!isPicked[next] && !(next > 9 && next < 25))
     {
       isPicked[next] = true;
       ++picked;
