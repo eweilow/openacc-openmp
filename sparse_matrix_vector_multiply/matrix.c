@@ -151,5 +151,7 @@ struct SparseMatrix generateMatrix(unsigned int dimensions, double sparseness)
   }
 #endif
 
+  free(indicesWithNonZero);
+
   return matrix;
 }

@@ -53,13 +53,3 @@ void pickRandom(unsigned int *into, unsigned int count, unsigned int maxSize)
 
   free(isPicked);
 }
-
-/*
-  unsigned int *into = (unsigned int *)malloc(sizeof(unsigned int) * 10);
-  pickRandom(into, 10, 1000);
-
-  for (int n = 0; n < 10; n++)
-  {
-    printf("%d\n", into[n]);
-  }
-*/
