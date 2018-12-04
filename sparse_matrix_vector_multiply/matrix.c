@@ -53,7 +53,8 @@ bool indexMatrix(struct SparseMatrix *matrix, unsigned int row, unsigned int col
   return false;
 }
 
-// #define DEBUG
+//#define DEBUG
+//#define PRINT_MATRIX
 
 // Generate a sparse matrix
 struct SparseMatrix generateMatrix(unsigned int dimensions, double sparseness)
@@ -131,6 +132,8 @@ struct SparseMatrix generateMatrix(unsigned int dimensions, double sparseness)
     printf("  %d: %.4f\n", matrix.elementColumns[el], matrix.elements[el]);
   }
 
+#endif
+#ifdef PRINT_MATRIX
   printf(" matrix:\n");
   for (unsigned int row = 0; row < dimensions; row++)
   {
@@ -140,11 +143,11 @@ struct SparseMatrix generateMatrix(unsigned int dimensions, double sparseness)
       double element;
       if (indexMatrix(&matrix, row, column, &element))
       {
-        printf("%.2f\t", element);
+        printf("%.4f  \t", element);
       }
       else
       {
-        printf("%.2f\t", 0.0);
+        printf("%.4f  \t", 0.0);
       }
     }
     printf("\n");

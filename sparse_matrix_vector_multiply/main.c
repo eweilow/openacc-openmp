@@ -3,12 +3,16 @@
 #include <time.h>
 
 #include "./matrix.c"
+#include "./vectors.c"
+#include "./multiply.c"
 
 #define MATRIX_SIZE 1000000
-#define ITERATIONS_TO_RUN 1000
+#define ITERATIONS_TO_RUN 20
 
-#define SPARSENESS_PERCENTAGE 99.999
+#define SPARSENESS_PERCENTAGE 99.99
 #define SPARSENESS (double)(SPARSENESS_PERCENTAGE / 100.0)
+
+//#define VEC_DEBUG
 
 int main()
 {
@@ -27,12 +31,30 @@ int main()
   printf(" - total: %f milliseconds\n", matrix_time);
   printf(" - per row: %f microseconds\n", 1000.0 * matrix_time / MATRIX_SIZE);
 
+  printf("\n== Generating vectors ==\n");
+  double *input, *output;
+  createVector(&input, MATRIX_SIZE, 1.0);
+  createVector(&output, MATRIX_SIZE, 0.0);
+
   printf("\n== Running %d iterations ==\n", ITERATIONS_TO_RUN);
   clock_t begin = clock();
+
+  matrixIterate(&matrix, input, output, ITERATIONS_TO_RUN);
 
   clock_t end = clock();
   double time = 1000.0 * (double)(end - begin) / CLOCKS_PER_SEC;
   printf("\n== Computation completed! ==\n", time, 1000.0 * time / ITERATIONS_TO_RUN);
   printf(" - total time: %f milliseconds\n", time);
-  printf(" - per iteration: %f microseconds\n", 1000.0 * time / ITERATIONS_TO_RUN);
+  printf(" - per iteration: %f microseconds (%.4f milliseconds)\n", 1000.0 * time / ITERATIONS_TO_RUN, time / ITERATIONS_TO_RUN);
+
+  printf("\n== Results ==\n");
+#ifdef VEC_DEBUG
+  printf(" in:\n");
+  free(input);
+  createVector(&input, MATRIX_SIZE, 1.0);
+  printVector(input, MATRIX_SIZE);
+
+  printf(" out:\n");
+  printVector(output, MATRIX_SIZE);
+#endif
 }
