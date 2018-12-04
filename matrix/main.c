@@ -3,6 +3,8 @@
 
 #include "./shared.c"
 
+#define ITERATIONS_TO_RUN 1
+
 #define BLOCK_SIZE 200000
 float inputVector[MATRIX_SIZE];
 float outputVector[MATRIX_SIZE];
@@ -25,7 +27,6 @@ void multiplyMatrixBlock(int fromRow, int toRow, int fromColumn, int toColumn)
 
 void matrixMultiply()
 {
-#pragma acc data copy(outputVector) copyin(inputVector)
   for (int i = 0; i <= MATRIX_SIZE / BLOCK_SIZE; i++)
   {
     int startI = i * BLOCK_SIZE;
@@ -43,6 +44,7 @@ void matrixMultiply()
         endJ = MATRIX_SIZE;
       }
       multiplyMatrixBlock(startI, endI, startJ, endJ);
+      printf("%d %d\n", i, j);
     }
   }
 }
@@ -54,16 +56,24 @@ int main()
   printf("Starting matrix multiplication\n");
   clock_t begin = clock();
 
-  matrixMultiply();
+#pragma acc data copy(outputVector) copyin(inputVector)
+  for (int n = 0; n < ITERATIONS_TO_RUN; n++)
+  {
+    matrixMultiply();
+  }
 
   clock_t end = clock();
-  printf("\n\nComputation took %f ms\n", 1000.0 * (double)(end - begin) / CLOCKS_PER_SEC);
-  printf("Input: ");
-  printVector(inputVector);
-  printf("Output: ");
-  printVector(outputVector);
-  compareVectors(inputVector, outputVector);
-  printf("\n\n");
+  double time = 1000.0 * (double)(end - begin) / CLOCKS_PER_SEC;
+  printf("\n== Computation completed! ==\n", time, 1000.0 * time / ITERATIONS_TO_RUN);
+  printf(" - total time: %f milliseconds\n", time);
+  printf(" - per iteration: %f microseconds (%.4f milliseconds)\n", 1000.0 * time / ITERATIONS_TO_RUN, time / ITERATIONS_TO_RUN);
+
+  // printf("Input: ");
+  // printVector(inputVector);
+  // printf("Output: ");
+  // printVector(outputVector);
+  // compareVectors(inputVector, outputVector);
+  // printf("\n\n");
 
   return 0;
 }

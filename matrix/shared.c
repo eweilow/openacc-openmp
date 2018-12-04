@@ -1,4 +1,4 @@
-#define MATRIX_SIZE 500000
+#define MATRIX_SIZE 700000
 
 void initializeVectors(float a[MATRIX_SIZE], float b[MATRIX_SIZE])
 {
