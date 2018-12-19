@@ -1,7 +1,9 @@
 @echo off
 
+mkdir .\dist\
+
 SET PGI_ACC_TIME=1
-SET OUTPUT=".\dist\build_acc.exe"
+SET OUTPUT=".\dist\build_acc_tesla.exe"
 SET PGCC="pgcc"
 SET BUILDCOMMAND=%PGCC% -o=%OUTPUT% -acc -ta=tesla -fast -Minfo=accel -Mprof=ccff main.c
 
